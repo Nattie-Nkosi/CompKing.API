@@ -67,5 +67,27 @@ namespace CompKing.API.Controllers
                 componentId = finalComponent.Id
             }, finalComponent);
         }
+
+        [HttpPut("{componentId}")]
+        public ActionResult updateComponent(int computerId, int componentId, ComponentForUpdateDto component)
+        {
+            var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
+            if(computer == null)
+            {
+                return NotFound();
+            }
+
+            var componentFromStore = computer.Components.FirstOrDefault(c => c.Id == componentId);
+            if(component == null)
+            {
+                return NotFound();
+            }
+
+            componentFromStore.Name = component.Name;
+
+            componentFromStore.Description = component.Description;
+
+            return NoContent();
+        }
     }
 }
