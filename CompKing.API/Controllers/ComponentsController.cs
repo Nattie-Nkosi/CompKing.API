@@ -1,4 +1,5 @@
 ﻿using CompKing.API.Models;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CompKing.API.Controllers
@@ -86,6 +87,46 @@ namespace CompKing.API.Controllers
             componentFromStore.Name = component.Name;
 
             componentFromStore.Description = component.Description;
+
+            return NoContent();
+        }
+
+        [HttpPatch("{componentId}")]
+        public ActionResult PartiallyUpdateComponent(int computerId, int componentId, JsonPatchDocument<ComponentForUpdateDto> patchDocument)
+        {
+            var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
+
+            if(computer == null)
+            {
+                return NotFound();
+            }
+
+            var componentFromStore = computer.Components.FirstOrDefault(c => c.Id == componentId);
+            if(componentFromStore == null)
+            {
+                return NotFound();
+            }
+
+            var componentToPatch = new ComponentForUpdateDto()
+            {
+                Name = componentFromStore.Name,
+                Description = componentFromStore.Description
+            };
+
+            patchDocument.ApplyTo(componentToPatch, ModelState);
+
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if(!TryValidateModel(componentToPatch))
+            {
+                return BadRequest(ModelState);
+            }
+
+            componentFromStore.Name = componentToPatch.Name;
+            componentFromStore.Description = componentToPatch.Description;
 
             return NoContent();
         }
