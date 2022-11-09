@@ -11,11 +11,13 @@ namespace CompKing.API.Controllers
     {
         private readonly ILogger<ComponentsController> _logger;
         private readonly IMailSevice _mailServices;
+        private readonly ComputersDataStore _computersDataStore;
 
-        public ComponentsController(ILogger<ComponentsController> logger, IMailSevice mailService)
+        public ComponentsController(ILogger<ComponentsController> logger, IMailSevice mailService, ComputersDataStore computersDataStore)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _mailServices = mailService ?? throw new ArgumentNullException(nameof(mailService));    
+            _mailServices = mailService ?? throw new ArgumentNullException(nameof(mailService)); 
+            _computersDataStore = computersDataStore ?? throw new ArgumentNullException(nameof(computersDataStore)); 
         }
 
         [HttpGet]
@@ -23,7 +25,7 @@ namespace CompKing.API.Controllers
         {
             try
             {
-                var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
+                var computer = _computersDataStore.computers.FirstOrDefault(c => c.Id == computerId);
 
                 // If a Computer ID does not exist return Not Found Error -> 404 not found
                 if (computer == null)
@@ -45,7 +47,7 @@ namespace CompKing.API.Controllers
         [HttpGet("{componentId}", Name = "GetComponent")]
         public ActionResult<ComponentDto> GetComponent(int computerId, int componentId)
         {
-            var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
+            var computer = _computersDataStore.computers.FirstOrDefault(c => c.Id == computerId);
             if(computer == null)
             {
                 return NotFound();
@@ -64,14 +66,14 @@ namespace CompKing.API.Controllers
         public ActionResult<ComponentForCreationDto> CreateComponent(int computerId, ComponentForCreationDto component)
         {
             
-            var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
+            var computer = _computersDataStore.computers.FirstOrDefault(c => c.Id == computerId);
             if(computer == null)
             {
                 return NotFound();
             }
 
             // Calculate an Id of a component
-            var maxComponentId = ComputersDataStore.Current.computers.SelectMany(c => c.Components).Max(p => p.Id);
+            var maxComponentId = _computersDataStore.computers.SelectMany(c => c.Components).Max(p => p.Id);
 
             var finalComponent = new ComponentDto()
             {
@@ -92,7 +94,7 @@ namespace CompKing.API.Controllers
         [HttpPut("{componentId}")]
         public ActionResult updateComponent(int computerId, int componentId, ComponentForUpdateDto component)
         {
-            var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
+            var computer = _computersDataStore.computers.FirstOrDefault(c => c.Id == computerId);
             if(computer == null)
             {
                 return NotFound();
@@ -114,7 +116,7 @@ namespace CompKing.API.Controllers
         [HttpPatch("{componentId}")]
         public ActionResult PartiallyUpdateComponent(int computerId, int componentId, JsonPatchDocument<ComponentForUpdateDto> patchDocument)
         {
-            var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
+            var computer = _computersDataStore.computers.FirstOrDefault(c => c.Id == computerId);
 
             if(computer == null)
             {
@@ -154,7 +156,7 @@ namespace CompKing.API.Controllers
         [HttpDelete("{componentId}")]
         public ActionResult DeleteComponent(int computerId, int componentId)
         {
-            var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
+            var computer = _computersDataStore.computers.FirstOrDefault(c => c.Id == computerId);
 
             if (computer == null)
             {

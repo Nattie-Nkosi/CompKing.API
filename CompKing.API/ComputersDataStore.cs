@@ -6,7 +6,7 @@ namespace CompKing.API
     {
         public List<ComputerDto> computers { get; set; }
 
-        public static ComputersDataStore Current { get; } = new ComputersDataStore();
+        //public static ComputersDataStore Current { get; } = new ComputersDataStore();
 
         public ComputersDataStore()
         {

@@ -1,3 +1,4 @@
+using CompKing.API;
 using CompKing.API.Services;
 using Microsoft.AspNetCore.StaticFiles;
 using Serilog;
@@ -25,7 +26,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<FileExtensionContentTypeProvider>();
 
+#if DEBUG
 builder.Services.AddTransient<IMailSevice, LocalMailSevice>();
+#else
+builder.Services.AddTransient<IMailSevice, CloudMailService>();
+#endif
+
+builder.Services.AddSingleton<ComputersDataStore>();
 
 var app = builder.Build();
 
