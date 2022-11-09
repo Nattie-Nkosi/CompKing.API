@@ -1,4 +1,5 @@
 ﻿using CompKing.API.Models;
+using CompKing.API.Services;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,18 +9,37 @@ namespace CompKing.API.Controllers
     [ApiController]
     public class ComponentsController : ControllerBase
     {
+        private readonly ILogger<ComponentsController> _logger;
+        private readonly IMailSevice _mailServices;
+
+        public ComponentsController(ILogger<ComponentsController> logger, IMailSevice mailService)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _mailServices = mailService ?? throw new ArgumentNullException(nameof(mailService));    
+        }
+
         [HttpGet]
         public ActionResult<IEnumerable<ComponentDto>> GetComponents(int computerId)
         {
-            var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
-
-            // If a Computer ID does not exist return Not Found Error -> 404 not found
-            if(computer == null)
+            try
             {
-                return NotFound();
-            }
+                var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
 
-            return Ok(computer.Components);
+                // If a Computer ID does not exist return Not Found Error -> 404 not found
+                if (computer == null)
+                {
+                    _logger.LogInformation($"Computer with id {computerId} was not found when accessing components");
+                    return NotFound();
+                }
+                return Ok(computer.Components);
+            } catch (Exception ex)
+            {
+                _logger.LogCritical($"Exception while getting components for computer of {computerId}.", ex);
+                return StatusCode(500, "A problem happenend while handling your request.");
+            }
+            
+
+            
         }
 
         [HttpGet("{componentId}", Name = "GetComponent")]
@@ -128,6 +148,27 @@ namespace CompKing.API.Controllers
             componentFromStore.Name = componentToPatch.Name;
             componentFromStore.Description = componentToPatch.Description;
 
+            return NoContent();
+        }
+
+        [HttpDelete("{componentId}")]
+        public ActionResult DeleteComponent(int computerId, int componentId)
+        {
+            var computer = ComputersDataStore.Current.computers.FirstOrDefault(c => c.Id == computerId);
+
+            if (computer == null)
+            {
+                return NotFound();
+            }
+
+            var componentFromStore = computer.Components.FirstOrDefault(c => c.Id == componentId);
+            if (componentFromStore == null)
+            {
+                return NotFound();
+            }
+
+            computer.Components.Remove(componentFromStore);
+            _mailServices.Send("Component deleted", $"Component {componentFromStore.Name} with id {componentFromStore.Id} was deleted.");
             return NoContent();
         }
     }
